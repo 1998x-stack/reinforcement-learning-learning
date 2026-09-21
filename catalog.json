@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "slug": "reinforcement-learning",
+      "title": "强化学习",
+      "en": "REINFORCEMENT LEARNING",
+      "description": "从马尔可夫决策过程与策略梯度出发，结合原论文、数学推导和可交互实验，探索强化学习算法。",
+      "href": "reinforcement-learning/",
+      "accent": "mint",
+      "courses": [
+        {
+          "slug": "reinforce",
+          "title": "REINFORCE",
+          "subtitle": "从 Williams 1992 原论文理解策略梯度、Monte Carlo 回报与 Baseline。",
+          "href": "reinforcement-learning/reinforce/",
+          "eyebrow": "01 · POLICY GRADIENT",
+          "topics": ["策略梯度", "Reward-to-Go", "Baseline", "PyTorch"]
+        },
+        {
+          "slug": "ppo",
+          "title": "PPO",
+          "subtitle": "从 Schulman 等人的原论文理解 Actor–Critic、GAE、概率比率与裁剪目标。",
+          "href": "reinforcement-learning/ppo/",
+          "eyebrow": "02 · POLICY OPTIMIZATION",
+          "topics": ["Actor–Critic", "GAE", "PPO-Clip", "训练诊断"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="REINFORCE 交互式论文精读：Williams 1992 原论文、策略梯度推导、概率实验室、Reward-to-Go、Baseline、PyTorch 与 PPO 的联系。">
+  <title>REINFORCE Lab · 从原论文理解策略梯度</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转至正文</a>
+  <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="REINFORCE Lab 首页"><span class="brand-icon">∇</span><span>RL<span class="brand-dot">.</span>LAB <small>/ REINFORCE</small></span></a>
+    <nav class="toplinks" aria-label="快捷导航"><a href="#paper">原论文</a><a href="#experiment">交互实验</a><a href="#derivation">数学推导</a><a href="#implementation">代码实现</a></nav>
+    <a class="header-github" href="https://github.com/1998x-stack/reinforcement-learning-learning" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+    <button class="menu-toggle" id="menuToggle" aria-controls="sidebar" aria-expanded="false" aria-label="打开章节导航">☰</button>
+  </header>
+  <div class="layout" id="top">
+    <aside class="sidebar" id="sidebar" aria-label="章节导航">
+      <div class="side-label">LEARNING PATH <span>01 — 09</span></div>
+      <nav class="side-nav">
+        <a href="#intro"><span>00</span>概览</a>
+        <a href="#paper"><span>01</span>1992 · 回到原论文</a>
+        <a href="#pipeline"><span>02</span>算法工作机制</a>
+        <a href="#experiment"><span>03</span>交互式策略实验</a>
+        <a href="#derivation"><span>04</span>对数梯度推导</a>
+        <a href="#trajectory"><span>05</span>Reward-to-Go</a>
+        <a href="#baseline"><span>06</span>Baseline · 降低方差</a>
+        <a href="#implementation"><span>07</span>PyTorch 实现</a>
+        <a href="#limitations"><span>08</span>从 REINFORCE 到 PPO</a>
+        <a href="#theorem"><span>09</span>原论文的核心定理</a>
+      </nav>
+      <div class="side-foot"><span class="signal"></span>INTERACTIVE PAPER NOTES <small>以公式、实验与代码建立直觉</small></div>
+    </aside>
+    <main id="main">
+      <section class="hero section" id="intro" aria-labelledby="hero-title">
+        <div class="hero-ambient" aria-hidden="true"></div>
+        <div class="eyebrow"><span class="live-dot"></span> REINFORCEMENT LEARNING / PAPER DEEP DIVE <span class="hero-edition">1992 → TODAY</span></div>
+        <div class="hero-grid">
+          <div>
+            <div class="hero-index">01 / POLICY GRADIENT FOUNDATIONS</div>
+            <h1 id="hero-title">让奖励成为<br><em>策略的梯度。</em></h1>
+            <p class="hero-description">从 Williams 1992 原论文出发，理解 REINFORCE 如何利用随机动作与回报，直接优化策略概率。通过可操作的参数实验，将抽象公式变成可观察的概率变化。</p>
+            <div class="hero-actions"><a class="btn btn-primary" href="#experiment">开始交互实验 <span>↗</span></a><a class="btn btn-secondary" href="#paper">阅读论文精要 ↓</a></div>
+            <div class="hero-meta"><span>09 个知识模块</span><span>03 组交互实验</span><span>完整数学推导 + PyTorch</span></div>
+          </div>
+          <div class="hero-visual panel" aria-label="策略更新概念示意">
+            <div class="visual-header"><span>POLICY UPDATE / LIVE CONCEPT</span><span class="live-indicator">● MONTE CARLO</span></div>
+            <div class="agent-node">π<sub>θ</sub><small>stochastic policy</small></div>
+            <div class="agent-path"><span>sample action</span><span>↓</span></div>
+            <div class="visual-choice"><span>action A <b>0.70</b></span><div class="mini-meter"><i style="width:70%"></i></div><span>action B <b>0.30</b></span><div class="mini-meter alt"><i style="width:30%"></i></div></div>
+            <div class="reward-path">environment reward <strong>R = +1.0</strong> → policy gradient</div>
+            <div class="hero-formula math-display">\theta\leftarrow\theta+\alpha R\nabla_\theta\log\pi_\theta(a\mid s)</div>
+            <p class="visual-caption">正向强化高回报动作；真正的更新取决于回报、基线和对数概率梯度。</p>
+          </div>
+        </div>
+        <div class="hero-bottom"><span>SCROLL TO EXPLORE</span><span>↓</span></div>
+      </section>
+
+      <section class="section" id="paper" aria-labelledby="paper-title">
+        <div class="section-head"><span class="section-number">01 / ORIGINAL PAPER</span><h2 id="paper-title">回到 1992 年：<br><span>REINFORCE 解决什么问题？</span></h2><p>当网络包含随机决策单元、只能从环境获取奖励信号时，怎样调整权重，使期望奖励增加？</p></div>
+        <article class="paper-card panel"><div class="paper-top"><span class="tag tag-cyan">MACHINE LEARNING · 1992</span><span class="paper-page">VOL. 8 · PP. 229–256</span></div><h3>Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning</h3><p class="paper-author">Ronald J. Williams · May 1992</p><p>原论文讨论包含随机单元的连接主义网络，提出一类 REINFORCE 权重更新规则，并论证其在即时奖励以及某些受限的延迟奖励任务中，平均更新方向与期望奖励的梯度相关。</p><div class="paper-equation formula-feature"><span>ORIGINAL UPDATE RULE · SECTION 4</span><div class="math-display">\Delta w_{ij}=\alpha_{ij}(r-b_{ij})e_{ij}</div><div class="math-display">e_{ij}=\frac{\partial\log g_i}{\partial w_{ij}}</div></div><div class="paper-footer"><span>原论文中的 \(g_i\) 是随机单元输出的概率；现代策略中的对应对象是 \(\pi_\theta(a\mid s)\)。</span><a href="https://doi.org/10.1007/BF00992696" target="_blank" rel="noopener noreferrer">原论文 DOI ↗</a></div></article>
+        <div class="compare-grid"><div class="panel compare-card"><span class="overline">THEN / 1992</span><h3>随机神经元</h3><div class="math-display">g_i(y_i,w_i,x_i)</div><p>表示随机单元在给定输入与权重时，产生某个输出的概率。</p></div><div class="panel compare-card"><span class="overline">NOW / POLICY GRADIENT</span><h3>参数化策略</h3><div class="math-display">\pi_\theta(a\mid s)</div><p>表示智能体在给定状态下，选择某个动作的概率。</p></div></div>
+        <div class="insight"><span class="insight-icon">↗</span><p><strong>共同的数学结构：</strong>利用“采样结果的对数概率梯度 × 奖励信号”估计期望回报的上升方向。REINFORCE 不需要对环境的状态转移求导。</p></div>
+      </section>
+
+      <section class="section" id="pipeline" aria-labelledby="pipeline-title"><div class="section-head"><span class="section-number">02 / ALGORITHM FLOW</span><h2 id="pipeline-title">一次完整的<br><span>策略学习循环</span></h2><p>从观察到采样、从环境反馈到参数更新：每次完成一条轨迹，使用本次采样数据改善下一轮策略。</p></div>
+        <div class="pipeline" role="list"><article class="flow-card panel" role="listitem"><span class="flow-step">01</span><div class="flow-icon">◎</div><div><h3>观察环境 <small>OBSERVE</small></h3><p>获取当前状态 \(s_t\)，作为策略网络的输入。</p></div><span class="flow-math">\(s_t\)</span></article><div class="flow-arrow">↓</div><article class="flow-card panel" role="listitem"><span class="flow-step">02</span><div class="flow-icon">◈</div><div><h3>采样动作 <small>SAMPLE</small></h3><p>策略输出概率分布，再随机采样，而非始终选择概率最大的动作。</p></div><span class="flow-math">\(a_t\sim\pi_\theta(\cdot\mid s_t)\)</span></article><div class="flow-arrow">↓</div><article class="flow-card panel" role="listitem"><span class="flow-step">03</span><div class="flow-icon">⇄</div><div><h3>与环境交互 <small>INTERACT</small></h3><p>执行动作，记录下一状态与奖励；继续直至回合结束。</p></div><span class="flow-math">\((r_{t+1},s_{t+1})\)</span></article><div class="flow-arrow">↓</div><article class="flow-card panel" role="listitem"><span class="flow-step">04</span><div class="flow-icon">∑</div><div><h3>计算未来回报 <small>EVALUATE</small></h3><p>从每个决策时刻向后，计算 Reward-to-Go。</p></div><span class="flow-math">\(G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_{k+1}\)</span></article><div class="flow-arrow">↓</div><article class="flow-card panel flow-highlight" role="listitem"><span class="flow-step">05</span><div class="flow-icon">∇</div><div><h3>更新策略 <small>OPTIMIZE</small></h3><p>以回报加权的对数概率梯度进行参数更新，再开始下一回合。</p></div><span class="flow-math">\(\theta\leftarrow\theta+\alpha\widehat{\nabla J}\)</span></article></div>
+        <p class="small-note">这里展示现代 episodic REINFORCE 的完整流程，而非将多步 MDP 版本误标为 1992 论文中的原始流程图。</p>
+      </section>
+
+      <section class="section" id="experiment" aria-labelledby="experiment-title"><div class="section-head"><span class="section-number">03 / INTERACTIVE LAB</span><h2 id="experiment-title">亲手改变<br><span>一个动作的概率</span></h2><p>构造单参数 Bernoulli 策略：\(\pi_\theta(A)=\sigma(\theta)\)，\(\pi_\theta(B)=1-\sigma(\theta)\)。尝试调整采样动作、奖励与基线，实时观察一次梯度更新。</p></div>
+        <div class="lab panel"><div class="lab-title"><div><span class="overline">EXPERIMENT 01 / BINARY POLICY</span><h3>Policy Probability Lab</h3></div><button class="btn btn-ghost" id="resetDemo" type="button">↺ 重置参数</button></div><div class="lab-grid"><div class="controls">
+          <label class="control"><span>初始 P(A) <output id="probValue">35%</output></span><input id="prob" aria-label="初始动作 A 概率" type="range" min="0.05" max="0.95" step="0.05" value="0.35"></label>
+          <fieldset class="choice-field"><legend>本次实际采样动作</legend><div class="segmented"><label><input type="radio" name="action" value="A" checked><span>动作 A</span></label><label><input type="radio" name="action" value="B"><span>动作 B</span></label></div></fieldset>
+          <label class="control"><span>本次奖励 r <output id="rewardValue">+1.0</output></span><input id="reward" aria-label="本次奖励" type="range" min="-2" max="2" step="0.5" value="1"></label>
+          <label class="control"><span>奖励基线 b <output id="baselineValue">0.0</output></span><input id="baseline" aria-label="奖励基线" type="range" min="-2" max="2" step="0.5" value="0"></label>
+          <label class="control"><span>学习率 α <output id="lrValue">0.50</output></span><input id="lr" aria-label="学习率" type="range" min="0.05" max="1" step="0.05" value="0.5"></label>
+          <div class="formula-note"><span>更新公式</span><div class="math-display">\Delta\theta=\alpha(r-b)(y-p)</div><p>采样 A 时 \(y=1\)，采样 B 时 \(y=0\)，而 \(p=\pi_\theta(A)\)。</p></div>
+        </div><div class="lab-results"><div class="results-heading"><span class="overline">LIVE POLICY DISTRIBUTION</span><span class="status-pill" id="directionBadge">提高已采样动作概率</span></div><div class="bar-row"><div class="bar-label"><span>更新前 · P(A)</span><b id="beforeA">35.00%</b></div><div class="bar-track"><div id="barBeforeA" class="bar-fill muted" style="width:35%"></div></div><div class="bar-label sub"><span>更新前 · P(B)</span><b id="beforeB">65.00%</b></div><div class="bar-track thin"><div id="barBeforeB" class="bar-fill muted" style="width:65%"></div></div></div><div class="bar-row"><div class="bar-label"><span>更新后 · P(A)</span><b id="afterA">—</b></div><div class="bar-track"><div id="barAfterA" class="bar-fill cyan" style="width:35%"></div></div><div class="bar-label sub"><span>更新后 · P(B)</span><b id="afterB">—</b></div><div class="bar-track thin"><div id="barAfterB" class="bar-fill violet" style="width:65%"></div></div></div><div class="metrics"><div><span>策略参数变化 Δθ</span><strong id="deltaTheta">—</strong></div><div><span>动作 A 概率变化</span><strong id="deltaProb">—</strong></div></div><div class="calculation"><span>本次样本的参数更新</span><div class="live-equation" id="liveEquation" aria-live="polite"></div><p id="demoExplanation" aria-live="polite"></p></div></div></div></div>
+        <div class="insight"><span class="insight-icon">!</span><p><strong>观察重点：</strong>决定是否强化某个采样动作的是 \(r-b\) 的符号，而不是奖励的正负号本身。这里仅执行一次参数更新；改变滑块不会累积训练多轮，也不会重新采样。</p></div>
+        <div class="concept-grid"><article class="panel mini-concept"><span class="overline">WHY THE FORMULA WORKS</span><div class="math-display">\nabla_\theta\log\pi_\theta(y)=y-p</div><p>对 Bernoulli-logistic 策略求导，恰好得到“已采样标签 − 当前概率”的梯度。</p></article><article class="panel mini-concept"><span class="overline">SIMPLE EXAMPLE</span><p>即使获得正奖励 2，如果基线为 3，本次回报仍低于参考水平，所采样动作会被抑制。</p></article></div>
+      </section>
+
+      <section class="section" id="derivation" aria-labelledby="derivation-title"><div class="section-head"><span class="section-number">04 / MATHEMATICAL DERIVATION</span><h2 id="derivation-title">随机采样，为什么<br><span>仍然能提供梯度？</span></h2><p>关键并不是直接对环境奖励求导，而是将概率分布的梯度改写为可采样的期望。</p></div><div class="identity panel"><span class="overline">THE LOG-DERIVATIVE TRICK</span><div class="math-display">\boxed{\nabla_\theta p_\theta(x)=p_\theta(x)\nabla_\theta\log p_\theta(x)}</div><p>又称 score-function identity。它将“概率分布的梯度”变成“概率 × 对数概率梯度”。</p></div><div class="derivation-steps"><article class="proof-step panel"><div class="proof-count">01 / OBJECTIVE</div><h3>从单步期望奖励出发</h3><p>假设奖励 \(r(s,a)\) 不显式依赖策略参数 \(\theta\)：</p><div class="math-display">J(\theta)=\sum_a\pi_\theta(a\mid s)r(s,a)</div><div class="math-display">\nabla_\theta J=\sum_a r(s,a)\nabla_\theta\pi_\theta(a\mid s)</div></article><article class="proof-step panel"><div class="proof-count">02 / TRANSFORM</div><h3>代入对数微分恒等式</h3><div class="math-display">\nabla_\theta\log\pi_\theta(a\mid s)=\frac{\nabla_\theta\pi_\theta(a\mid s)}{\pi_\theta(a\mid s)}</div><div class="math-display">\nabla_\theta J=\sum_a\pi_\theta(a\mid s)r(s,a)\nabla_\theta\log\pi_\theta(a\mid s)</div></article><article class="proof-step panel"><div class="proof-count">03 / SAMPLING ESTIMATOR</div><h3>把求和改写为采样期望</h3><div class="math-display">\boxed{\nabla_\theta J=\mathbb E_{a\sim\pi_\theta}[r(s,a)\nabla_\theta\log\pi_\theta(a\mid s)]}</div><p>无需枚举每个动作，只需按当前策略采样并观察对应奖励，即可得到期望梯度的无偏估计。</p></article></div>
+        <div class="panel trajectory-math"><span class="overline">EXTEND TO FULL TRAJECTORIES</span><h3>多步轨迹的概率因子分解</h3><div class="math-display">p_\theta(\tau)=\rho_0(s_0)\prod_{t=0}^{T-1}\pi_\theta(a_t\mid s_t)P(s_{t+1}\mid s_t,a_t)</div><p>若初始状态分布和环境转移概率不显式依赖 \(\theta\)，对轨迹概率取对数并求导，环境项就会消失：</p><div class="math-display">\boxed{\nabla_\theta\log p_\theta(\tau)=\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t)}</div><p>令 \(R(\tau)=\sum_{t=0}^{T-1}r_{t+1}\) 表示无折扣总回报，则：</p><div class="math-display">\nabla_\theta J=\mathbb E_\tau\left[R(\tau)\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t)\right]</div><div class="formula-bottom">无须知道环境转移概率的具体函数形式，也无须对环境本身反向传播。</div></div>
+      </section>
+
+      <section class="section" id="trajectory" aria-labelledby="trajectory-title"><div class="section-head"><span class="section-number">05 / CREDIT ASSIGNMENT</span><h2 id="trajectory-title">Reward-to-Go：<br><span>奖励如何沿时间回传？</span></h2><p>每个动作仅使用从该时刻开始的未来奖励，排除它无法改变的过去奖励。拖动最后一步奖励和折扣系数，观察三步轨迹的回报分配。</p></div>
+        <div class="panel timeline-lab"><div class="lab-title"><div><span class="overline">EXPERIMENT 02 / TRAJECTORY</span><h3>从最后一步向前计算累计回报</h3></div><span class="status-pill">3 STEPS</span></div><div class="timeline-controls"><label class="control"><span>折扣系数 γ <output id="gammaValue">0.90</output></span><input id="gamma" type="range" min="0" max="1" step="0.05" value="0.9" aria-label="折扣系数"></label><label class="control"><span>最终奖励 r₃ <output id="terminalRewardValue">+5.0</output></span><input id="terminalReward" type="range" min="-5" max="10" step="0.5" value="5" aria-label="最终奖励"></label></div><div class="timeline"><div class="time-node"><span class="time-index">t = 0</span><div class="time-dot">s₀</div><strong>动作 a₀</strong><small>r₁ = 0</small></div><span class="time-link">→</span><div class="time-node"><span class="time-index">t = 1</span><div class="time-dot">s₁</div><strong>动作 a₁</strong><small>r₂ = 0</small></div><span class="time-link">→</span><div class="time-node terminal"><span class="time-index">t = 2</span><div class="time-dot">s₂</div><strong>动作 a₂</strong><small id="terminalTimelineLabel">r₃ = +5</small></div></div><div class="return-grid"><div><span>G₀</span><strong id="g0">4.05</strong><small id="g0formula">γ² × r₃</small></div><div><span>G₁</span><strong id="g1">4.50</strong><small id="g1formula">γ × r₃</small></div><div><span>G₂</span><strong id="g2">5.00</strong><small>r₃</small></div></div><div class="timeline-bottom"><div class="math-display">G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_{k+1}</div><p>三步都可能得到最终奖励的强化信号；折扣系数越小，早期动作分得的回报越少。Reward-to-Go 仍不能精确判定每个动作对最终结果的因果贡献。</p></div></div>
+        <div class="panel caution"><span class="tag tag-amber">重要的折扣约定</span><p>当 \(\gamma=1\) 时，标准无折扣回合目标的 REINFORCE 估计为：</p><div class="math-display">\widehat{\nabla J}=\sum_{t=0}^{T-1}G_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)</div><p>若目标严格定义为固定初始状态下的折扣回报 \(J=\mathbb E[\sum_t\gamma^t r_{t+1}]\)，对应的无偏估计还需要外层折扣：</p><div class="math-display">\widehat{\nabla J}=\sum_{t=0}^{T-1}\gamma^tG_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)</div><p class="small-note">不要将不同教材中使用不同目标定义的两种写法不加说明地混为一谈。</p></div>
+      </section>
+
+      <section class="section" id="baseline" aria-labelledby="baseline-title"><div class="section-head"><span class="section-number">06 / VARIANCE REDUCTION</span><h2 id="baseline-title">Baseline：<br><span>为什么减去基线仍然正确？</span></h2><p>原论文的更新规则就包含基线。现代 REINFORCE 中，常用状态价值函数作为基线，减小梯度估计的波动。</p></div><div class="baseline-grid"><article class="panel baseline-card"><span class="tag tag-green">ABOVE BASELINE</span><div class="math-display">G_t-b(s_t)>0</div><h3>高于参考水平</h3><p>增强本次采样动作在相应状态下的概率。</p></article><article class="panel baseline-card"><span class="tag">EQUAL TO BASELINE</span><div class="math-display">G_t-b(s_t)=0</div><h3>等于参考水平</h3><p>该样本对应的策略梯度更新为零。</p></article><article class="panel baseline-card"><span class="tag tag-rose">BELOW BASELINE</span><div class="math-display">G_t-b(s_t)<0</div><h3>低于参考水平</h3><p>降低本次采样动作在相应状态下的概率。</p></article></div>
+        <div class="panel proof-panel"><span class="overline">UNBIASED BASELINE / PROOF</span><h3>动作无关的状态基线，其期望梯度贡献为零</h3><p>对于不依赖当前动作、在计算策略梯度时作为常量处理的 \(b(s)\)：</p><div class="math-display">\begin{aligned}\mathbb E_{a\sim\pi_\theta}[b(s)\nabla_\theta\log\pi_\theta(a\mid s)]&=b(s)\sum_a\nabla_\theta\pi_\theta(a\mid s)\\&=b(s)\nabla_\theta\underbrace{\sum_a\pi_\theta(a\mid s)}_{1}\\&=0\end{aligned}</div><div class="proof-conclusion">\(\mathbb E[(G_t-b(s_t))\nabla\log\pi]=\mathbb E[G_t\nabla\log\pi]\)</div><p>适当选择基线通常能降低方差，但任意基线并不保证降低方差。现代实现常使用 \(b(s_t)=V^\pi(s_t)\)，并定义采样优势估计 \(A_t=G_t-V^\pi(s_t)\)。</p></div>
+        <div class="panel baseline-sandbox"><div class="lab-title"><div><span class="overline">EXPERIMENT 03 / RELATIVE REWARD</span><h3>相同回报，不同参考线</h3></div><span class="tag tag-cyan">INTERACTIVE</span></div><div class="timeline-controls"><label class="control"><span>实际回报 G <output id="relativeReturnValue">2.0</output></span><input id="relativeReturn" type="range" min="-2" max="6" step="0.5" value="2" aria-label="实际回报"></label><label class="control"><span>参考基线 b <output id="relativeBaselineValue">3.0</output></span><input id="relativeBaseline" type="range" min="-2" max="6" step="0.5" value="3" aria-label="参考基线"></label></div><div class="advantage-meter"><div><span>优势估计 A = G − b</span><strong id="relativeAdvantage">−1.0</strong></div><p id="relativeExplanation" aria-live="polite">正奖励也可能低于参考水平。</p></div></div>
+      </section>
+
+      <section class="section" id="implementation" aria-labelledby="implementation-title"><div class="section-head"><span class="section-number">07 / IMPLEMENTATION</span><h2 id="implementation-title">从数学公式<br><span>到 PyTorch 代码</span></h2><p>先收集完整回合的奖励与采样动作的对数概率，再从后往前计算回报，构造负号损失并反向传播。</p></div><div class="algorithm-strip"><div><b>01</b><span>初始化策略网络</span></div><div><b>02</b><span>采样完整轨迹</span></div><div><b>03</b><span>计算未来回报</span></div><div><b>04</b><span>构造策略损失</span></div><div><b>05</b><span>更新参数</span></div></div><div class="code-panel panel"><div class="code-header"><span><i></i> reinforce.py <small>PYTORCH · γ = 1</small></span><button id="copyCode" type="button" class="btn btn-ghost">复制代码</button></div><pre><code id="pytorchCode">import torch
+
+
+def reinforce_update(log_probs, rewards, optimizer):
+    """One complete episode; undiscounted REINFORCE."""
+    # 1. Reward-to-Go, computed backwards
+    returns = []
+    G = 0.0
+    for reward in reversed(rewards):
+        G = reward + G
+        returns.append(G)
+    returns.reverse()
+
+    # 2. Match tensor dtype/device, keep action log-prob graphs
+    returns = torch.tensor(
+        returns,
+        dtype=log_probs[0].dtype,
+        device=log_probs[0].device,
+    )
+    log_probs = torch.stack(log_probs)
+
+    # 3. Minimize the negative policy-gradient objective
+    loss = -(log_probs * returns).sum()
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()</code></pre></div><div class="insight"><span class="insight-icon">−</span><p><strong>为什么损失前要加负号？</strong>REINFORCE 对期望回报做梯度上升，而 PyTorch 常用优化器对损失做梯度下降：\(\max J(\theta)\Longleftrightarrow\min[-J(\theta)]\)。这段核心函数假设已收集到一整回合的 <code>log_probs</code> 与 <code>rewards</code>。</p></div>
+      </section>
+
+      <section class="section" id="limitations" aria-labelledby="limitations-title"><div class="section-head"><span class="section-number">08 / WHAT COMES NEXT</span><h2 id="limitations-title">从 REINFORCE<br><span>走向 Actor-Critic 与 PPO</span></h2><p>后续算法并未抛弃对数概率梯度的思想，而是进一步处理采样方差、长轨迹更新和策略步长控制。</p></div><div class="evolution panel"><div>REINFORCE</div><span>→</span><div>Actor-Critic</div><span>→</span><div class="current">PPO</div></div><div class="limitation-grid"><article class="panel limitation-card"><span>01 / VARIANCE</span><h3>Monte Carlo 估计方差大</h3><p>轨迹回报会随随机动作和环境结果波动。可使用状态价值基线、TD 误差与 GAE 等方式估计优势。</p></article><article class="panel limitation-card"><span>02 / UPDATE TIMING</span><h3>完整回合的更新等待较长</h3><p>经典回合式 REINFORCE 需要等待未来奖励。Actor-Critic 可以通过价值函数和多步 bootstrap 估计未来回报。</p></article><article class="panel limitation-card"><span>03 / UPDATE SIZE</span><h3>没有内建的策略变化约束</h3><p>单次较大的梯度可能导致策略概率明显变化。PPO 引入新旧策略的概率比率与裁剪目标，限制超出区间后的目标收益。</p></article></div><div class="panel ppo-bridge"><span class="overline">THE CONNECTION</span><div class="math-display">\underbrace{\nabla_\theta\log\pi_\theta(a_t\mid s_t)}_{\text{policy gradient}}\quad\longrightarrow\quad\underbrace{\min\!\left(r_t(\theta)\hat A_t,\operatorname{clip}(r_t(\theta),1-\epsilon,1+\epsilon)\hat A_t\right)}_{\text{PPO clipped objective}}</div><p>PPO 的目标不是保证任意一次参数更新都提高真实回报，而是利用概率比率和裁剪机制控制优化目标对较大策略变化的鼓励程度。</p></div></section>
+
+      <section class="section theorem-section" id="theorem" aria-labelledby="theorem-title"><div class="section-head"><span class="section-number">09 / THE CORE THEOREM</span><h2 id="theorem-title">最后，回到论文的<br><span>关键数学结论</span></h2><p>单次采样的更新可以很噪声，但符合论文假设时，平均更新方向能够与期望奖励梯度一致。</p></div><div class="theorem-card panel"><span class="overline">WILLIAMS 1992 · THEOREM 1 · SECTION 4</span><div class="math-display">\boxed{\mathbb E[\Delta W\mid W]=\alpha\nabla_W\mathbb E[r\mid W]}</div><p>当全部参数采用相同的正常数学习率 \(\alpha\)，且满足论文提出的相应条件时，平均更新等于期望奖励的梯度乘以学习率。对于更一般的非负学习率因子，论文给出平均更新与梯度的内积非负的结论。</p></div><div class="closing panel"><span class="overline">ONE EQUATION TO REMEMBER</span><div class="math-display">\boxed{\nabla_\theta J(\theta)=\mathbb E_\tau\!\left[R(\tau)\nabla_\theta\log p_\theta(\tau)\right]}</div><h3>让环境提供奖励，让策略提供梯度。</h3><p>这正是 REINFORCE 的思想起点，也是理解现代策略梯度算法、优势估计、Actor-Critic 和 PPO 的基础。</p><div class="closing-actions"><a class="btn btn-primary" href="#experiment">再次运行交互实验 ↗</a><a class="btn btn-secondary" href="https://doi.org/10.1007/BF00992696" target="_blank" rel="noopener noreferrer">前往原论文 ↗</a></div></div>
+        <div class="references"><h3>参考文献与阅读路径</h3><p>[1] Williams, R. J. (1992). <a href="https://doi.org/10.1007/BF00992696" target="_blank" rel="noopener noreferrer">Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning</a>. Machine Learning, 8, 229–256.</p><p>[2] Sutton, R. S. &amp; Barto, A. G. <a href="http://incompleteideas.net/book/the-book-2nd.html" target="_blank" rel="noopener noreferrer">Reinforcement Learning: An Introduction (2nd ed.)</a>, Chapter 13 (Policy Gradient Methods).</p><p>[3] Schulman et al. (2017). <a href="https://arxiv.org/abs/1707.06347" target="_blank" rel="noopener noreferrer">Proximal Policy Optimization Algorithms</a>.</p><p class="small-note">本学习页面是面向教学的现代化重构。单步随机神经元的原论文设置与多步 MDP 中的现代 episodic REINFORCE 已明确区分；数学结论的适用范围见各节注释。</p></div>
+      </section>
+      <footer class="footer"><span>∇ RL.LAB · REINFORCE / INTERACTIVE NOTES</span><span>Built for <a href="https://github.com/1998x-stack/reinforcement-learning-learning" target="_blank" rel="noopener noreferrer">reinforcement-learning-learning ↗</a></span><a href="#top">回到顶部 ↑</a></footer>
+    </main>
+  </div>
+</body>
+</html>

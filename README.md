@@ -1,58 +1,87 @@
-# ∇ Reinforcement Learning Labs · 强化学习交互式论文精读
+# Knowledge Atlas · 交互式学习知识库
 
-基于原论文的中文强化学习可视化学习站点。使用纯静态 HTML / CSS / 原生 JavaScript，结合数学推导、独立绘制的 SVG 曲线、可交互参数实验和参考代码，逐步学习策略梯度及近端策略优化。
+这是一个按**知识类别 → 专题课程**组织的静态学习网站。每篇课程以原论文、数学推导、可视化实验与参考代码为主要呈现方式。当前已发布 **强化学习** 类别的 **REINFORCE** 和 **PPO**；今后可以继续新增强化学习算法、基础理论、论文精读、工程实践，或建立完全不同的知识类别。
 
-## 在线课程
+**网站首页：** https://1998x-stack.github.io/reinforcement-learning-learning/ （需 GitHub Pages 部署成功）
 
-| 课程 | 在线地址 | 内容 |
-| --- | --- | --- |
-| 01 · REINFORCE | [打开 REINFORCE Lab](https://1998x-stack.github.io/reinforcement-learning-learning/) | Williams 1992 原论文、策略梯度、Reward-to-Go、Baseline、PyTorch 与 PPO 的联系 |
-| 02 · PPO | [打开 PPO Lab](https://1998x-stack.github.io/reinforcement-learning-learning/ppo/) | Schulman et al. 2017 原论文、Actor–Critic / GAE、TRPO、概率比率、Figure 1 裁剪曲线交互重构、Algorithm 1、训练诊断及科研实验 |
+## 目录说明
 
-> 上述在线地址只有在仓库 GitHub Pages 已启用且部署成功后才会正常访问；源代码已经保存在 `main` 分支。PPO 页面可直接在仓库的 [`ppo/index.html`](ppo/index.html) 查看。
+```text
+.
+├── index.html                         # 通用知识库首页（不再是一篇 REINFORCE 课程）
+├── catalog.json                       # 类别与已发布课程的统一目录数据
+├── assets/
+│   ├── site.css                       # 知识库首页/类别页共用视觉系统
+│   └── site.js                        # 自动生成目录卡片和搜索过滤
+├── reinforcement-learning/
+│   ├── index.html                     # 强化学习类别首页
+│   ├── reinforce/                     # REINFORCE 独立课程：HTML/CSS/JS/favicon
+│   │   ├── index.html
+│   │   ├── styles.css
+│   │   ├── app.js
+│   │   └── favicon.svg
+│   └── ppo/                           # PPO 独立课程：HTML/CSS/JS
+│       ├── index.html
+│       ├── styles.css
+│       └── script.js
+├── ppo/index.html                     # 原 PPO 地址的兼容跳转（保留 URL 的 hash）
+├── favicon.svg
+├── .nojekyll
+└── .github/workflows/pages.yml        # GitHub Pages 自动部署
+```
 
-## PPO Lab：章节与互动功能
+## 已发布课程
 
-1. **MDP 与策略梯度**：轨迹概率、对数导数技巧、状态价值与优势函数。
-2. **Actor–Critic 与 GAE**：拖动 λ，实时观察五步 TD 误差权重与优势估计。
-3. **TRPO 与重要性采样**：控制两个动作的新旧策略概率，查看概率比率及精确 KL 散度。
-4. **PPO-Clip**：独立重绘原论文 Figure 1，联动调整 `r`、`ε` 与 `|Â|`，观察正负优势的裁剪平坦区。
-5. **为什么使用 `min`**：两组数值实验解释为何只对有利方向上的过度代理收益进行裁剪。
-6. **完整训练回路**：Rollout → GAE → K 轮 Minibatch 更新 → 重新采样；区分真实终止与外部截断。
-7. **损失、PyTorch、超参数与研究**：策略/价值/熵目标、PPO-Penalty、单批次参考代码、KL/Clip Fraction、消融实验和原论文链接。
+| 类别 | 专题 | 内容 | 在线入口 |
+| --- | --- | --- | --- |
+| 强化学习 | REINFORCE | Williams 1992、策略梯度、Reward-to-Go、Baseline、交互式概率实验、PyTorch | [打开课程](https://1998x-stack.github.io/reinforcement-learning-learning/reinforcement-learning/reinforce/) |
+| 强化学习 | PPO | Schulman et al. 2017、Actor–Critic、GAE、TRPO、PPO-Clip 曲线、训练诊断 | [打开课程](https://1998x-stack.github.io/reinforcement-learning-learning/reinforcement-learning/ppo/) |
 
-PPO Lab 源代码位于 `ppo/index.html`、`ppo/styles.css`、`ppo/script.js`。样式支持桌面和移动设备、浅色/深色主题、键盘导航及低动态效果偏好。所有曲线和示意为独立教学重绘，不是论文截图。网页公式经 MathJax CDN 渲染；离线时会保留 LaTeX 原文。站点无需构建步骤和后端。
+[强化学习类别首页](https://1998x-stack.github.io/reinforcement-learning-learning/reinforcement-learning/) · [GitHub Pages 设置](https://github.com/1998x-stack/reinforcement-learning-learning/settings/pages)
 
-## REINFORCE Lab
+## 如何增加新的类别与课程
 
-主页保留已有 REINFORCE 课程，包含 Williams 1992 原论文、Observe → Sample → Interact → Evaluate → Update 流程、二动作 Bernoulli 策略实验、对数梯度推导、Reward-to-Go、Baseline 无偏性证明、PyTorch 更新函数以及与 Actor–Critic / PPO 的联系。
+**新增算法（已有类别）：** 在 `reinforcement-learning/<algorithm-slug>/` 放入独立的 `index.html`、`styles.css` 与 `script.js`（或其他静态资源）；在 `catalog.json` 中强化学习的 `courses` 数组新增一条课程记录，填写唯一 `slug`、名称、简介、站点根目录相对路径 `href`、关键词 `topics`。首页和类别页会从统一目录自动显示新卡片；若直接从 `file://` 打开 HTML，页面仍保留目前两门已发布课程的静态导航，建议以本地 HTTP 服务预览新增内容。
 
-## GitHub Pages 部署
+**新增其他知识类别：** 新建 `<category-slug>/index.html`（可参照 `reinforcement-learning/index.html`，设置 `data-category` 为新类别的 `slug`、`data-root-prefix="../"` 和 `data-catalog-path="../catalog.json"`），并在 `catalog.json` 的 `categories` 数组中新增类别记录与实际已发布课程；课程独立存放在 `<category-slug>/<course-slug>/`。避免使用中文、空格等作为路径名；每个类别和课程都有固定的短横线英文 slug。
 
-仓库中的 [`.github/workflows/pages.yml`](.github/workflows/pages.yml) 在 `main` 分支有提交时自动尝试部署整个静态站点，课程直接以相对路径引用资源：根目录为 REINFORCE，`/ppo/` 为 PPO。
+`catalog.json` 数据示例：
 
-如果 Actions 中的部署在 **Configure Pages** 阶段出现 `Get Pages site failed` 或 `Not Found`：仓库管理员需进入 [Settings → Pages](https://github.com/1998x-stack/reinforcement-learning-learning/settings/pages)，将 **Build and deployment → Source** 设为 **GitHub Actions**，然后在 [Actions](https://github.com/1998x-stack/reinforcement-learning-learning/actions) 中重新运行 Pages 工作流。若工作流中的 `enablement: true` 有足够权限，首次启用步骤也可能自动完成；以 Actions 结果为准。
+```json
+{
+  "slug": "example-category",
+  "title": "类别名称",
+  "en": "CATEGORY NAME",
+  "description": "类别简介",
+  "href": "example-category/",
+  "courses": [
+    {
+      "slug": "example-course",
+      "title": "课程名称",
+      "subtitle": "课程简介",
+      "href": "example-category/example-course/",
+      "eyebrow": "01 · ORIGINAL PAPER",
+      "topics": ["关键词一", "关键词二"]
+    }
+  ]
+}
+```
 
-> 不要同时将 Pages 来源配置为 `Deploy from a branch` 和 `GitHub Actions`。部署成功后打开 https://1998x-stack.github.io/reinforcement-learning-learning/ppo/ 。
+仅登记**已经存在的页面**，避免出现无法访问的课程卡片。每个课程使用相对资源路径，以适配 GitHub Pages 的仓库子路径；外部论文给出来源，不复制全文或原文图表。独立课程可采用自己的视觉主题，但全站通用入口使用 `assets/site.css`。
 
-## 本地预览
+## 兼容旧链接
 
-在仓库根目录执行：
+原根目录的 REINFORCE 课程已迁移到 `/reinforcement-learning/reinforce/`。旧根目录课程章节 URL（例如 `/#experiment`）会跳转到新课程中对应的章节；旧 `/ppo/` 路径会跳转到 `/reinforcement-learning/ppo/`，并保留查询参数与锚点。原课程 HTML/CSS/JS 均通过原始 Git blob 迁移，不重新编写核心实验逻辑。
+
+## 预览与部署
 
 ```bash
 python -m http.server 8000
 ```
 
-浏览器访问 http://localhost:8000/ppo/ 。无需 npm 或前端构建。部分浏览器的剪贴板 API 需要 localhost 或 HTTPS。
+打开 http://localhost:8000/ 浏览全站入口；在本地 HTTP 服务中可加载 `catalog.json`。每次推送 `main` 会触发 [Pages workflow](.github/workflows/pages.yml)，部署整个静态仓库。首次部署前，请在仓库 Settings → Pages 中选择 **GitHub Actions** 作为 Source；之后在 Actions 页面检查实际部署状态。
 
-## 原论文与延伸阅读
+## 主要论文
 
 - Williams, R. J. (1992). *Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning*. https://doi.org/10.1007/BF00992696
-- Schulman, J. et al. (2015). *Trust Region Policy Optimization*. https://arxiv.org/abs/1502.05477
-- Schulman, J. et al. (2015). *High-Dimensional Continuous Control Using Generalized Advantage Estimation*. https://arxiv.org/abs/1506.02438
 - Schulman, J. et al. (2017). *Proximal Policy Optimization Algorithms*. https://arxiv.org/abs/1707.06347
-- OpenAI Spinning Up · PPO: https://spinningup.openai.com/en/latest/algorithms/ppo.html
-- CleanRL · PPO: https://docs.cleanrl.dev/rl-algorithms/ppo/
-- *Implementation Matters in Deep Policy Gradients*: https://arxiv.org/abs/2005.12729
-
-**内容说明：** 本站为教育用途的现代化重构。特别区分 PPO 裁剪代理目标与严格的策略概率约束，也不声称 PPO 在任意环境中具有每次更新单调改善的保证。
