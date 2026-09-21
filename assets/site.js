@@ -35,6 +35,35 @@
     a.append(tags, el('div', 'card-bottom', '进入交互式课程 →'));
     return a;
   }
+  function questionCard(question) {
+    const a = link(question.href, '', 'course-card surface-card');
+    a.setAttribute('aria-label', `阅读问题：${question.title}`);
+    const top = el('div', 'course-card-top');
+    top.append(el('span', 'eyebrow', question.eyebrow || 'QUESTIONS'), el('span', 'card-arrow', '↗'));
+    a.append(top, el('h3', '', question.title), el('p', '', question.subtitle));
+    const tags = el('div', 'tags');
+    [question.categoryTitle, ...(question.topics || [])].filter(Boolean).forEach(tag => tags.append(el('span', 'tag', tag)));
+    a.append(tags, el('div', 'card-bottom', '进入问题与交互实验 →'));
+    return a;
+  }
+  function renderQuestions(catalog) {
+    const questionGrid = lookup('questionGrid');
+    if (!questionGrid) return;
+    const all = Array.isArray(catalog.questions) ? catalog.questions : [];
+    const entries = view === 'category' ? all.filter(item => item.categorySlug === body.dataset.category) : all;
+    const search = lookup('questionSearch');
+    const counter = lookup('questionCount');
+    const empty = lookup('questionEmpty');
+    function render() {
+      const q = search ? search.value.trim().toLocaleLowerCase() : '';
+      const filtered = entries.filter(item => [item.title,item.subtitle,item.eyebrow,item.categoryTitle,...(item.topics||[])].join(' ').toLocaleLowerCase().includes(q));
+      questionGrid.replaceChildren(...filtered.map(questionCard));
+      if (counter) counter.textContent = `已展示 ${filtered.length} / ${entries.length} 个问题`;
+      if (empty) empty.hidden = filtered.length !== 0;
+    }
+    if (search) search.addEventListener('input', render);
+    render();
+  }
   async function init() {
     const path = body.dataset.catalogPath;
     if (!path) return;
@@ -45,7 +74,7 @@
       if (!Array.isArray(catalog.categories)) throw new Error('Invalid catalog');
       const categories = catalog.categories.filter(item => Array.isArray(item.courses) && item.href);
       const selected = view === 'category' ? categories.filter(item => item.slug === body.dataset.category) : categories;
-      if (!selected.length) return;
+      renderQuestions(catalog);
       const categoryGrid = lookup('categoryGrid');
       if (categoryGrid) categoryGrid.replaceChildren(...selected.map(categoryCard));
       const courseGrid = lookup('courseGrid');
