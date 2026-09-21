@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "categories": [
     {
       "slug": "reinforcement-learning",
@@ -26,6 +26,19 @@
           "topics": ["Actor–Critic", "GAE", "PPO-Clip", "训练诊断"]
         }
       ]
+    }
+  ],
+  "questions": [
+    {
+      "slug": "ppo-on-policy",
+      "title": "为什么 PPO 是 On-Policy，却又“不太像”？",
+      "subtitle": "通过训练时间轴、重要性采样和状态访问分布，对比标准 PPO 与长期经验回放的本质差异。",
+      "href": "questions/ppo-on-policy/",
+      "doc": "questions/ppo-on-policy/README.md",
+      "categorySlug": "reinforcement-learning",
+      "categoryTitle": "强化学习",
+      "eyebrow": "QUESTION 001 · POLICY OPTIMIZATION",
+      "topics": ["PPO", "On-Policy", "Off-Policy", "重要性采样", "状态分布", "PPO-Clip"]
     }
   ]
 }
